@@ -2,6 +2,12 @@ const {
   io
 } = require('../server')
 
+const {
+  TicketControl
+} = require('../classes/ticket-control')
+
+const ticketControl = new TicketControl()
+
 io.on('connection', (client) => {
   console.log('usuario conectado')
 
@@ -11,7 +17,9 @@ io.on('connection', (client) => {
 
   client.on('enviarMensaje', (mensaje, callback) => {
     // todos los usuarios
-    client.broadcast.emit('enviarMensaje', mensaje)
+    // client.broadcast.emit('enviarMensaje', mensaje)
+
+
 
 
     //   if (mensaje.usuario) {
@@ -30,4 +38,33 @@ io.on('connection', (client) => {
     //   mensaje: 'Hola mundo'
     // })
   })
+
+  client.on('siguienteTicket', (data, callback) => {
+    let numero = ticketControl.siguienteTicker()
+    callback(numero)
+  })
+
+  client.emit('estadoActual', {
+    actual: ticketControl.getUltimo(),
+    ultimos4: ticketControl.getUltimos4()
+  })
+
+  client.on('atenderTicket', (data, callback) => {
+    if (!data.escritorio) return callback({
+      err: true,
+      mensaje: 'El escritorio es necesario'
+    })
+
+    let atenderTicket = ticketControl.atenderTicket(data.escritorio)
+
+    callback(atenderTicket)
+
+    // aqui hay que actualizar la pantalla--..
+    // emitir ultimos4 hay que usar el broadcast 
+    // para que llegue  a todos
+
+    client.broadcast.emit('ultimos4', {ultimos4: ticketControl.getUltimos4()})
+
+  })
+
 })
